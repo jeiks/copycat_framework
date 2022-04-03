@@ -11,8 +11,8 @@ Several studies revealed that state-of-the-art CNNs are vulnerable to adversaria
 <br>Therefore, we hypothesize that they also do not need to be trained with Problem Domain images to operate on it, i.e., we can query a black-box model with [ImageNet's](https://image-net.org/) images and use the provided labels (hard-labels) to train a new model (*called Copycat*) that achieves similar performance on test dataset.
 
 This simple method to attack a model and steal its knowledge is our scope of research and you can learn more at:
-[Paper 1](http://dx.doi.org/10.1109/ijcnn.2018.8489592),
-[Paper 2](http://dx.doi.org/10.1016/j.patcog.2021.107830)), and
+[Paper 1](http://dx.doi.org/10.1109/ijcnn.2018.8489592) or on [arXiv](https://arxiv.org/abs/1806.05476),
+[Paper 2](http://dx.doi.org/10.1016/j.patcog.2021.107830)) or on [arXiv](https://arxiv.org/abs/2101.08717), and
 [Papers' code](https://github.com/jeiks/Stealing_DL_Models).
 In these works, our experiments presented high accuracies, showing that is possible to copy a black-box model.
 As cited before, the process uses only Random Natural images (i.e., images from [ImageNet](https://image-net.org/) and some from [Microsoft COCO](https://cocodataset.org)) labeled (hard-label) by target model.
@@ -21,6 +21,29 @@ The main difference between our work and others is that we only use the hard-lab
 Our experiments were initially developed using [Caffe Framework](https://caffe.berkeleyvision.org/), but to be easy to you, we provide an [example of usage](https://github.com/jeiks/Stealing_DL_Models/tree/master/Framework) implemented in PyTorch to you test and apply _Copycat_.
 
 We are currently continuing our research using [PyTorch](https://pytorch.org/). Our own Framework is constantly under development (and lacks documentation), but we are publishing it to provide a simple way to test the Copycat method on your data.
+
+If you use our code, please cite our works:
+
+    @inproceedings{Correia-Silva-IJCNN2018,
+      author={Jacson Rodrigues {Correia-Silva} and Rodrigo F. {Berriel} and Claudine {Badue} and Alberto F. {de Souza} and Thiago {Oliveira-Santos}},
+      booktitle={2018 International Joint Conference on Neural Networks (IJCNN)},
+      title={Copycat CNN: Stealing Knowledge by Persuading Confession with Random Non-Labeled Data},
+      year={2018},
+      pages={1-8},
+      doi={10.1109/IJCNN.2018.8489592},
+      ISSN={2161-4407},
+      month={July}
+    }
+
+    @article{Correia-Silva-PATREC2021,
+	  author={Jacson Rodrigues {Correia-Silva} and Rodrigo F. {Berriel} and Claudine {Badue} and Alberto F. {De Souza} and Thiago {Oliveira-Santos}},
+	  title={Copycat CNN: Are random non-Labeled data enough to steal knowledge from black-box models?},
+	  journal={Pattern Recognition},
+	  volume={113},
+	  pages={107830},
+	  year={2021},
+	  issn={0031-3203}
+    }
 
 Feel free to contact me (jacson.silva at ufes dot br) and also to contribute with us.
 
