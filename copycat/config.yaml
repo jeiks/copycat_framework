@@ -1,0 +1,181 @@
+default:
+    gamma: 0.3
+    lr: 1e-4
+    criterion: CrossEntropyLoss
+    optimizer: SGD
+    validation_step: 1
+    save_snapshot: true
+    weight_decay: true
+    oracle:
+        max_epochs: 10
+        batch_size: 32
+    copycat:
+        max_epochs: 20
+        batch_size: 32
+        balance_dataset: 1
+
+problems:
+    ACT:
+        classes: [ApplyEyeMakeup, ApplyLipstick, Archery, BabyCrawling, BalanceBeam, BandMarching, BaseballPitch, Basketball, BasketballDunk, BenchPress, Biking, Billiards, BlowDryHair, BlowingCandles, BodyWeightSquats, Bowling, BoxingPunchingBag, BoxingSpeedBag, BreastStroke, BrushingTeeth, CleanAndJerk, CliffDiving, CricketBowling, CricketShot, CuttingInKitchen, Diving, Drumming, Fencing, FieldHockeyPenalty, FloorGymnastics, FrisbeeCatch, FrontCrawl, GolfSwing, Haircut, Hammering, HammerThrow, HandstandPushups, HandstandWalking, HeadMassage, HighJump, HorseRace, HorseRiding, HulaHoop, IceDancing, JavelinThrow, JugglingBalls, JumpingJack, JumpRope, Kayaking, Knitting, LongJump, Lunges, MilitaryParade, Mixing, MoppingFloor, Nunchucks, ParallelBars, PizzaTossing, PlayingCello, PlayingDaf, PlayingDhol, PlayingFlute, PlayingGuitar, PlayingPiano, PlayingSitar, PlayingTabla, PlayingViolin, PoleVault, PommelHorse, PullUps, Punch, PushUps, Rafting, RockClimbingIndoor, RopeClimbing, Rowing, SalsaSpin, ShavingBeard, Shotput, SkateBoarding, Skiing, Skijet, SkyDiving, SoccerJuggling, SoccerPenalty, StillRings, SumoWrestling, Surfing, Swing, TableTennisShot, TaiChi, TennisSwing, ThrowDiscus, TrampolineJumping, Typing, UnevenBars, VolleyballSpiking, WalkingWithDog, WallPushups, WritingOnBoard, YoYo]
+        outputs: 101
+        oracle:
+            max_epochs: 2
+            batch_size: 32
+            lr: 1e-4
+            gamma: 0.1
+        copycat:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-4
+            gamma: 0.3
+        data:
+            datasets:
+                train: data/act_od.txt.bz2
+                test: data/act_td.txt.bz2
+                pd: data/act_pd.txt.bz2
+                pd_sl: data/act_pd_sl.txt.bz2
+                npd: data/act_npd.txt.bz2
+            measures:
+                mean: [0.3507, 0.3788, 0.3951]
+                std: [0.2293, 0.2324, 0.2389]
+
+    DIG:
+        classes: [zero, one,   two, three, four, five, six, seven, eight, nine]
+        outputs: 10
+        oracle:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.3
+        copycat:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.3
+        data:
+            datasets:
+                train: data/dig_od.txt.bz2
+                test: data/dig_td.txt.bz2
+                pd: data/dig_pd.txt.bz2
+                pd_sl: data/dig_pd_sl.txt.bz2
+                npd: data/dig_npd.txt.bz2
+            measures:
+                mean: [0.1307, 0.1307, 0.1307]
+                std: [0.2819, 0.2819, 0.2819]
+
+    FER:
+        classes: [neutral, angry, disgusted, fearful, happy, sad, surprised]
+        outputs: 7
+        oracle:
+            max_epochs: 10
+            batch_size: 32
+            lr: 5e-3
+            gamma: 0.1
+        copycat:
+            max_epochs: 20
+            batch_size: 32
+            lr: 5e-3
+            gamma: 0.1
+        data:
+            datasets:
+                train: [data/fer_od.txt.bz2, data]
+                test: [data/fer_td.txt.bz2, data]
+                pd: [data/fer_pd.txt.bz2, data]
+                pd_sl: [data/fer_pd_sl.txt.bz2, data]
+                npd: [data/fer_npd.txt.bz2, data]
+            measures:
+                mean: [0.5061, 0.5061, 0.5061]
+                std: [0.2410, 0.2410, 0.2410]
+    GOC:
+        classes: [airplane, automobile, bird, cat, deer, dog, horse, ship, truck]
+        outputs: 9
+        oracle:
+            max_epochs: 20
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.1
+        copycat:
+            max_epochs: 10
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.1
+        data:
+            datasets:
+                train: data/goc_od.txt.bz2
+                test: data/goc_td.txt.bz2
+                pd: data/goc_pd.txt.bz2
+                pd_sl: data/goc_pd_sl.txt.bz2
+                npd: data/goc_npd.txt.bz2
+            measures:
+                mean: [0.4578, 0.4870, 0.4938]
+                std: [0.1987, 0.1956, 0.1978]
+
+    PED:
+        classes: [pedestrian, no_pedestrian]
+        outputs: 2
+        oracle:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.3
+        copycat:
+            max_epochs: 10
+            batch_size: 32
+            lr: 1e-5
+            gamma: 0.1
+        data:
+            datasets:
+                train: data/ped_od.txt.bz2
+                test: data/ped_td.txt.bz2
+                pd_sl: data/ped_pd_sl.txt.bz2
+                npd: data/ped_npd.txt.bz2
+            measures:
+                mean: [0.4579, 0.4871, 0.4938]
+                std: [0.1985, 0.1955, 0.1976]
+
+    SHN:
+        classes: [zero, one, two, three, four, five, six, seven, eight, nine]
+        outputs: 10
+        oracle:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.3
+        copycat:
+            max_epochs: 10
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.1
+        data:
+            datasets:
+                train: data/shn_od.txt.bz2
+                test: data/shn_td.txt.bz2
+                pd_sl: data/shn_pd_sl.txt.bz2
+                npd: data/shn_npd.txt.bz2
+            measures:
+                mean: [0.4729, 0.4439, 0.4379]
+                std: [0.1044, 0.1222, 0.1191]
+
+    SIG:
+        classes: [i10, i2, i4, i5, p10, p1, p11, p14, p19, p23, p5, pg, pl15, pl30, pl40, pl5, pl50, pl60, pl70, pl80, pn, pne, ps, w21, w22, w30, w42, w55, w57, w63]
+        outputs: 30
+        oracle:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.3
+        copycat:
+            max_epochs: 5
+            batch_size: 32
+            lr: 5e-4
+            gamma: 0.3
+        data:
+            datasets:
+                train: data/sig_od.txt.bz2
+                test: data/sig_td.txt.bz2
+                pd: data/sig_pd.txt.bz2
+                pd_sl: data/sig_pd_sl.txt.bz2
+                npd: data/sig_npd.txt.bz2
+            measures:
+                mean: [0.4122, 0.4084, 0.4637]
+                std: [0.1915, 0.1835, 0.1792]
