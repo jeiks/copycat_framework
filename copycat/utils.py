@@ -1,18 +1,69 @@
 import torch
-import torchvision
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 #system
 from os import path as os_path, listdir as os_listdir, rename as os_rename
-from hashlib import sha256 as hashlib_sha256
 #utils
-import warnings
 from .data import Dataset
 from tqdm import tqdm
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, balanced_accuracy_score,\
                             confusion_matrix, classification_report
+import random
+import cv2
+
+def set_seeds(seed):
+    '''
+    from: <https://lifesaver.codes/answer/can-t-reproduce-results-even-set-all-random-seeds-7068> Date: 04/2022
+    Here are some points to check:
+    * https://pytorch.org/docs/stable/notes/randomness.html: Pytorch is not reproducible between CPU and GPU, between different platforms, and different commits.
+    * Call this before running any of your functions:
+        (you can put it in the beginning of your main code, right after importing your modules.
+         If you do not use a module among these in your main code, it is ok, just import it and seed it so when you import it a second time,
+         Python will find that it has already been imported so there will be nothing to do. Example: torch):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+        np.random.seed(seed)  # Numpy module.
+        random.seed(seed)  # Python random module.
+        torch.manual_seed(seed)
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+    * Following the above, you need to seed EVERY external module (outside Pytorch) that may introduce randomness in your entire code.
+    * You need to set the init function of the worker(s) to be fed to the DataLoader:
+        def _init_fn(worker_id):
+          np.random.seed(int(seed))
+      Make sure that your dataloader loads samples in the same order every call. If you do cropping, or other preprocessing steps,
+      make sure that they are deterministic. As I remember, such modules can provide a deterministic result (in Pytorch 1.0.0 or even before this version).
+
+    * I learned this recently, despite it was written in Pytoch doc the whole time!!!!: Unfortunately, some Pytorch modules follow non-deterministic behavior;
+      and most of the time you can not get rid of it by following the above steps.
+      Example: the BACKWARD of upsampling and interpolation functionals/classes is non-deterministic (see here: 
+      <https://discuss.pytorch.org/t/non-deterministic-behavior-of-pytorch-upsample-interpolate/42842?u=sbelharbi>).
+      This means, if you use such modules in the training graph, you will never obtain a deterministic results no matter what you do.
+      torch.nn.ConvTranspose2d is not deterministic unless you set torch.backends.cudnn.deterministic = True
+      (they said you can try to make the operation deterministic ... by setting torch.backends.cudnn.deterministic = True.
+      So I am not sure if by doing so, you certainly obtain a deterministic result).
+      So, make sure you are not using any of the non-deterministic Pytorch modules.
+    
+    Print your intermediate results to find out from where the non-deterministic behavior comes from: loaded samples, crops, losses, ...
+
+    In my experience, following the above steps lead to exactly same results.
+    If it is not your case, you may be using an external library that is a source of randomness, or you are using a non-deterministic
+    Pytorch module (or something else that I am not aware of it). If reproducibility is important for you (and I assume it is), you can check step by step
+    your code to trace the source of randomness (run your code gradually, and inspect the results at every step).
+    Make sure that the part of your code that you think it is deterministic is indeed deterministic.
+    Let me know how it goes, and please, let me know what was the source of randomness in your case. I am curious. Thanks!
+    '''
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+    np.random.seed(seed)  # Numpy module.
+    random.seed(seed)  # Python random module.
+    torch.manual_seed(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    cv2.setRNGSeed(seed)
 
 def calculate_mean_std(dataset: Dataset, verbose=False):
     if verbose:
@@ -171,7 +222,11 @@ def test(model, dataset, db_name='test', batch_size=32, metric='f1_score'):
                 y_true[begin:end] = labels.detach().cpu()
                 y_pred[begin:end] = predictions.detach().cpu()
 
-    return compute_metrics(y_true, y_pred, metric=metric)
+    if type(metric) == list or type(metric) == tuple:
+        ret = [compute_metrics(y_true, y_pred, metric=met) for met in metric]
+    else:
+        ret = compute_metrics(y_true, y_pred, metric=metric)
+    return ret
 
 def compute_metrics(y_true, y_pred, metric='f1_score', digits=6):
     assert metric == 'f1_score' or metric == 'accuracy' or \

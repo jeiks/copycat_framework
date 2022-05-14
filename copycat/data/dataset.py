@@ -14,6 +14,20 @@ from ..config import Config
 default_collate = torch.utils.data._utils.collate.default_collate
 
 class Transform:
+    '''
+        Class to automate the process create the Oracle/Copycat transformer and also to maintain a default
+        It generates a transformer with:
+            * for Copycat: Resize the image to @img_size and provide a Tensor. It does NOT use normalization, mean, and std.
+            * for Oracle: Resize the image to @img_size and provide a Tensor. But it includes a normalization using mean and std.
+                          The mean and std must be provided by (priority order) args @mean and @std, or in the config file.
+        It also provides a method to check if "a specific transformer" is present in the transformer list.
+        Args:
+            img_size: image size
+            include_normalize: include a normalization transformer using mean and std (provided as args or in config file)
+            mean: mean to use in normalization transformer. It also override the "mean" defined in the config file.
+            std: standard deviation to use in normalization transformer. It also override the "std" defined in the config file.
+            config_std: provide a name to replace the default config file (copycat/config.yaml)
+    '''
     def __init__(self, problem, img_size=(128,128), include_normalize=False, mean=None, std=None, config_fn=None):
         self.problem = problem
         self.img_size = img_size
@@ -32,7 +46,11 @@ class Transform:
                 transforms.Normalize(m, s)
             )
     
-    def get_mean_std(self) -> tuple:
+    def get_mean_std(self):
+        '''
+            Method to return the mean and std, checking the arguments and also the config file.
+            Note: The arguments has higher priority.
+        '''
         if self.mean is None or self.std is None:
             mean, std = self.config.get_mean_std(self.problem)
             self.mean = mean if self.mean is None else self.mean
@@ -40,22 +58,17 @@ class Transform:
         return self.mean, self.std
 
     def has_transformer(self, trans):
+        '''
+            Method to check if transformer "trans" is in the transformer list (self.transform)
+            Args:
+                trans: PyTorch's transformer
+        '''
         if self.transform.__class__ == trans:
             return True
         elif self.transform.__class__ == transforms.Compose:
             return trans in [x.__class__ for x in self.transform.transforms]
         return False
     
-    def process_image(self, img, color=True):
-        if type(img) == type(''):
-            if color:
-                img = OpenImage.color_rgb_pil(img)
-            else:
-                img = OpenImage.grayscale_pil(img)
-        elif str(type(img)).find('PIL') == -1:
-            img = transforms.ToPILImage()(img)
-        return self.transform(img)
-
     def __repr__(self):
         return str(self.transform)
     
@@ -84,14 +97,14 @@ class Dataset:
     @param config_fn: string, filename of the configuration file (use only to change default values)
     '''
     filenames = {
-                  'train': '', #original data
+                  'od'   : '', #original data
                   'test' : '', #test data
                   'pd'   : '', #problem domain data
                   'pd_sl': '', #problem domain data with stolen labels
                   'npd'  : ''  #non-problem domain data
                   }
     classes = []
-    def __init__(self, root='', img_size=(128,128), normalize=None, mean=None, std=None, problem=None, classes=None, data_filenames=None, config_fn=None):
+    def __init__(self, root='', color=True, img_size=(128,128), normalize=None, mean=None, std=None, problem=None, classes=None, data_filenames=None, config_fn=None):
         self.problem = problem
         self.config_fn = config_fn
         self.config = Config(self.config_fn)
@@ -102,6 +115,7 @@ class Dataset:
         self.std = std
         self.root = root
         self.img_size = img_size
+        self.color = True if color is None else color
         self.config_datasets()
         self.config_classes()
     
@@ -128,7 +142,7 @@ class Dataset:
         db_root = self.__get_db_root(db_name)
         #print(f'Loading {db_name}({db_fn})...')
         setattr(self, db_name, ImageList( filename=db_fn, root=db_root,
-                                          color=True, transform=self.transform,
+                                          color=self.color, transform=self.transform,
                                           return_filename=False ))
 
     def config_classes(self):
@@ -142,7 +156,8 @@ class Dataset:
                     pass
 
     def new_transform(self):
-        return Transform(problem=self.problem, img_size=self.img_size, include_normalize=self.include_normalize, mean=self.mean, std=self.std, config_fn=self.config_fn)
+        return Transform(problem=self.problem, img_size=self.img_size,
+                         include_normalize=self.include_normalize, mean=self.mean, std=self.std, config_fn=self.config_fn)
 
     def has_transformer(self, trans):
         return self.transform.has_transformer(trans)
@@ -223,7 +238,7 @@ class Dataset:
             return self.__dynamic_set_root(method, root=root)
         if   method.endswith('loader'): return loader
         elif method.startswith('set_root_'): return set_root
-        else: raise ValueError(f'The method {method} does not exist.')
+        else: raise ValueError(f'The method "{method}" does not exist.')
 
     def __check_filenames(self):
         for k in self.filenames.keys():

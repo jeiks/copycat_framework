@@ -6,9 +6,10 @@ import numpy as np
 import torch
 import cv2
 #from PIL import Image
-from torchvision.transforms import ToPILImage
+from torchvision.transforms import ToPILImage, Grayscale
 from tqdm import tqdm
 from sys import stderr
+import torchvision
 
 from io import StringIO
 import bz2
@@ -39,9 +40,11 @@ class OpenImage:
         return ToPILImage()(img) # PIL.Image.Image
 
     @classmethod
-    def grayscale_pil(cls, img_fn):
+    def grayscale_pil(cls, img_fn, num_output_channels=3):
         img = cls.grayscale(img_fn)
-        return ToPILImage()(img) # PIL.Image.Image
+        # PIL.Image.Image, but with 3 channels to work with
+        # VGG and AlexNet without changing the architectures structure
+        return Grayscale(num_output_channels=num_output_channels)(ToPILImage()(img))
 
     @classmethod
     def color_rgb_pil(cls, img_fn):
@@ -89,12 +92,14 @@ class ImageList(data.Dataset):
 
     def __init__(self, filename,
                  root=None,
-                 color=False,
+                 color=True,
+                 num_output_channels=3,
                  transform=None, target_transform=None,
                  return_filename=False,
                  balance_dataset=False):
         self.filename = filename
         self.color = color
+        self.num_output_channels = num_output_channels
         self.set_root(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -112,7 +117,10 @@ class ImageList(data.Dataset):
             else:
                 self.open_image = lambda x: self.transform(OpenImage.color_rgb_pil(x))
         else:
-            self.open_image = OpenImage.grayscale_pil
+            if self.transform is None:
+                self.open_image = lambda x: torch.tensor(OpenImage.grayscale(x))
+            else:
+                self.open_image = lambda x: self.transform(OpenImage.grayscale_pil(x, num_output_channels=self.num_output_channels))
 
     def __open(self):
         assert type(self.filename) is str, f'@param filename "{self.filename}" must be a string (.txt or .bz2).'
@@ -169,17 +177,19 @@ class ImageList(data.Dataset):
         if self.root != '':
             img_fn = os.path.join(self.root, img_fn)
         
-        img = self.open_image(img_fn)
-        
-        #if self.transform is None:
-        #    img = transforms.ToTensor()(np.array(img))
-        #else:
-        #    img = self.transform(img)
+        try:
+            img = self.open_image(img_fn)
+            #if self.transform is None:
+            #    img = transforms.ToTensor()(np.array(img))
+            #else:
+            #    img = self.transform(img)
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+            if self.target_transform is not None:
+                target = self.target_transform(target)
 
-        return img, target, img_fn
+            return img, target, img_fn
+        except:
+            print(f'There was some error opening "{img_fn}"')
 
     def balance_dataset(self, balance):
         if balance and not self.is_balanced():
@@ -223,7 +233,7 @@ class ImageList(data.Dataset):
             fmt_str += f'     * Samples per class: {self.__len_per_cat__()}\n'
         else:
             tmp = self.__len_per_cat__()
-            tmp = [f'     * Class {ii}: {tmp[ii]:-6d} samples\n' for ii in self.categories]
+            tmp = [f'     * Class {idx}: {tmp[ii]:-6d} samples\n' for ii, idx in enumerate(self.categories)]
             fmt_str += f'{"".join(tmp)}'
         tmp      =  '    Transforms (if any): '
         fmt_str += f'{tmp}{get_trans_repr(self.transform, len(tmp))}\n' 

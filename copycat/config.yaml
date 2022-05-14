@@ -13,99 +13,172 @@ default:
         max_epochs: 20
         batch_size: 32
         balance_dataset: 1
+    finetune:
+        max_epochs: 10
+        batch_size: 32
+        balance_dataset: 1
 
 problems:
     ACT:
         classes: [ApplyEyeMakeup, ApplyLipstick, Archery, BabyCrawling, BalanceBeam, BandMarching, BaseballPitch, Basketball, BasketballDunk, BenchPress, Biking, Billiards, BlowDryHair, BlowingCandles, BodyWeightSquats, Bowling, BoxingPunchingBag, BoxingSpeedBag, BreastStroke, BrushingTeeth, CleanAndJerk, CliffDiving, CricketBowling, CricketShot, CuttingInKitchen, Diving, Drumming, Fencing, FieldHockeyPenalty, FloorGymnastics, FrisbeeCatch, FrontCrawl, GolfSwing, Haircut, Hammering, HammerThrow, HandstandPushups, HandstandWalking, HeadMassage, HighJump, HorseRace, HorseRiding, HulaHoop, IceDancing, JavelinThrow, JugglingBalls, JumpingJack, JumpRope, Kayaking, Knitting, LongJump, Lunges, MilitaryParade, Mixing, MoppingFloor, Nunchucks, ParallelBars, PizzaTossing, PlayingCello, PlayingDaf, PlayingDhol, PlayingFlute, PlayingGuitar, PlayingPiano, PlayingSitar, PlayingTabla, PlayingViolin, PoleVault, PommelHorse, PullUps, Punch, PushUps, Rafting, RockClimbingIndoor, RopeClimbing, Rowing, SalsaSpin, ShavingBeard, Shotput, SkateBoarding, Skiing, Skijet, SkyDiving, SoccerJuggling, SoccerPenalty, StillRings, SumoWrestling, Surfing, Swing, TableTennisShot, TaiChi, TennisSwing, ThrowDiscus, TrampolineJumping, Typing, UnevenBars, VolleyballSpiking, WalkingWithDog, WallPushups, WritingOnBoard, YoYo]
         outputs: 101
+        #db name to test the models
+        db_test: test
         oracle:
-            max_epochs: 2
+            max_epochs: 5
             batch_size: 32
-            lr: 1e-4
+            lr: 1e-3
             gamma: 0.1
+            #db name to train the oracle:
+            db_train: od
         copycat:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.3
+            #db name to train the copycat:
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
             max_epochs: 5
             batch_size: 32
             lr: 1e-4
             gamma: 0.3
+            #db name to finetune the copycat:
+            db_train: pd_sl
         data:
             datasets:
-                train: data/act_od.txt.bz2
-                test: data/act_td.txt.bz2
+                #Original Domain (Oracle training -- Baseline 1)
+                od: data/act_od.txt.bz2
+                #Problem Domain (Baseline 2 training)
                 pd: data/act_pd.txt.bz2
+                #Problem Domain with Stolen Labels (Copycat Finetuning)
                 pd_sl: data/act_pd_sl.txt.bz2
-                npd: data/act_npd.txt.bz2
+                #Non Problem Domain (Copycat training - 1k images)
+                npd_1k: data/act_npd-1k.txt.bz2
+                #Non Problem Domain (Copycat training - 5k images)
+                npd_5k: data/act_npd-5k.txt.bz2
+                #Test dataset (to compare performance)
+                test: data/act_td.txt.bz2
             measures:
+            #Mean and Std of Original Dataset
                 mean: [0.3507, 0.3788, 0.3951]
                 std: [0.2293, 0.2324, 0.2389]
 
     DIG:
         classes: [zero, one,   two, three, four, five, six, seven, eight, nine]
         outputs: 10
+        #db name to test the models
+        db_test: test
         oracle:
             max_epochs: 5
             batch_size: 32
             lr: 1e-3
             gamma: 0.3
+            #db name to train the oracle
+            db_train: od
         copycat:
             max_epochs: 5
             batch_size: 32
             lr: 1e-3
             gamma: 0.3
+            #db name to train the copycat
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-5
+            gamma: 0.5
+            #db name to finetune the copycat
+            db_train: pd_sl
         data:
             datasets:
-                train: data/dig_od.txt.bz2
-                test: data/dig_td.txt.bz2
+                #Original Domain (Oracle training -- Baseline 1)
+                od: data/dig_od.txt.bz2
+                #Problem Domain (Baseline 2 training)
                 pd: data/dig_pd.txt.bz2
+                #Problem Domain with Stolen Labels (Copycat Finetuning)
                 pd_sl: data/dig_pd_sl.txt.bz2
-                npd: data/dig_npd.txt.bz2
+                #Non Problem Domain (Copycat training - 1k images)
+                npd_1k: data/dig_npd-1k.txt.bz2
+                #Non Problem Domain (Copycat training - 5k images)
+                npd_5k: data/dig_npd-5k.txt.bz2
+                #Test dataset (to compare performance)
+                test: data/dig_td.txt.bz2
             measures:
+                #Mean and Std of Original Dataset
                 mean: [0.1307, 0.1307, 0.1307]
                 std: [0.2819, 0.2819, 0.2819]
 
     FER:
         classes: [neutral, angry, disgusted, fearful, happy, sad, surprised]
         outputs: 7
+        db_test: test
+        color: False
         oracle:
             max_epochs: 10
             batch_size: 32
-            lr: 5e-3
+            lr: 0.01
             gamma: 0.1
+            db_train: od
         copycat:
-            max_epochs: 20
+            max_epochs: 10
             batch_size: 32
-            lr: 5e-3
+            lr: 0.01
             gamma: 0.1
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
+            max_epochs: 10
+            batch_size: 32
+            lr: 0.0001
+            gamma: 0.1
+            db_train: pd_sl
+            balance_dataset: True
         data:
             datasets:
-                train: [data/fer_od.txt.bz2, data]
-                test: [data/fer_td.txt.bz2, data]
-                pd: [data/fer_pd.txt.bz2, data]
-                pd_sl: [data/fer_pd_sl.txt.bz2, data]
-                npd: [data/fer_npd.txt.bz2, data]
+                od: data/fer_od.txt.bz2
+                pd: data/fer_pd.txt.bz2
+                pd_sl: data/fer_pd_sl.txt.bz2
+                npd_1k: data/fer_npd-1k.txt.bz2
+                npd_5k: data/fer_npd-5k.txt.bz2
+                test: data/fer_td.txt.bz2
             measures:
                 mean: [0.5061, 0.5061, 0.5061]
                 std: [0.2410, 0.2410, 0.2410]
     GOC:
         classes: [airplane, automobile, bird, cat, deer, dog, horse, ship, truck]
         outputs: 9
+        db_test: test
         oracle:
-            max_epochs: 20
-            batch_size: 32
-            lr: 1e-3
-            gamma: 0.1
-        copycat:
+            #max_epochs: 20
             max_epochs: 10
             batch_size: 32
             lr: 1e-3
             gamma: 0.1
+            db_train: od
+        copycat:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.1
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-5
+            gamma: 0.1
+            db_train: pd_sl
         data:
             datasets:
-                train: data/goc_od.txt.bz2
-                test: data/goc_td.txt.bz2
+                od: data/goc_od.txt.bz2
                 pd: data/goc_pd.txt.bz2
                 pd_sl: data/goc_pd_sl.txt.bz2
-                npd: data/goc_npd.txt.bz2
+                npd_1k: data/goc_npd-1k.txt.bz2
+                test: data/goc_td.txt.bz2
+                npd_5k: data/goc_npd-5k.txt.bz2
             measures:
                 mean: [0.4578, 0.4870, 0.4938]
                 std: [0.1987, 0.1956, 0.1978]
@@ -113,22 +186,33 @@ problems:
     PED:
         classes: [pedestrian, no_pedestrian]
         outputs: 2
+        db_test: test
         oracle:
             max_epochs: 5
             batch_size: 32
             lr: 1e-3
             gamma: 0.3
+            db_train: od
         copycat:
             max_epochs: 10
             batch_size: 32
-            lr: 1e-5
+            lr: 1e-4
             gamma: 0.1
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-4
+            gamma: 0.1
+            db_train: pd_sl
         data:
             datasets:
-                train: data/ped_od.txt.bz2
-                test: data/ped_td.txt.bz2
+                od: data/ped_od.txt.bz2
                 pd_sl: data/ped_pd_sl.txt.bz2
-                npd: data/ped_npd.txt.bz2
+                npd_1k: data/ped_npd-1k.txt.bz2
+                npd_5k: data/ped_npd-5k.txt.bz2
+                test: data/ped_td.txt.bz2
             measures:
                 mean: [0.4579, 0.4871, 0.4938]
                 std: [0.1985, 0.1955, 0.1976]
@@ -136,22 +220,33 @@ problems:
     SHN:
         classes: [zero, one, two, three, four, five, six, seven, eight, nine]
         outputs: 10
+        db_test: test
         oracle:
-            max_epochs: 5
-            batch_size: 32
-            lr: 1e-3
-            gamma: 0.3
-        copycat:
             max_epochs: 10
             batch_size: 32
             lr: 1e-3
+            gamma: 0.3
+            db_train: od
+        copycat:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
             gamma: 0.1
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-5
+            gamma: 0.1
+            db_train: pd_sl
         data:
             datasets:
-                train: data/shn_od.txt.bz2
-                test: data/shn_td.txt.bz2
+                od: data/shn_od.txt.bz2
                 pd_sl: data/shn_pd_sl.txt.bz2
-                npd: data/shn_npd.txt.bz2
+                npd_1k: data/shn_npd-1k.txt.bz2
+                npd_5k: data/shn_npd-5k.txt.bz2
+                test: data/shn_td.txt.bz2
             measures:
                 mean: [0.4729, 0.4439, 0.4379]
                 std: [0.1044, 0.1222, 0.1191]
@@ -159,23 +254,34 @@ problems:
     SIG:
         classes: [i10, i2, i4, i5, p10, p1, p11, p14, p19, p23, p5, pg, pl15, pl30, pl40, pl5, pl50, pl60, pl70, pl80, pn, pne, ps, w21, w22, w30, w42, w55, w57, w63]
         outputs: 30
+        db_test: test
         oracle:
             max_epochs: 5
             batch_size: 32
             lr: 1e-3
             gamma: 0.3
+            db_train: od
         copycat:
+            max_epochs: 10
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.1
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
             max_epochs: 5
             batch_size: 32
-            lr: 5e-4
-            gamma: 0.3
+            lr: 1e-5
+            gamma: 0.1
+            db_train: pd_sl
         data:
             datasets:
-                train: data/sig_od.txt.bz2
+                od: data/sig_od.txt.bz2
                 test: data/sig_td.txt.bz2
                 pd: data/sig_pd.txt.bz2
                 pd_sl: data/sig_pd_sl.txt.bz2
-                npd: data/sig_npd.txt.bz2
+                npd_1k: data/sig_npd-1k.txt.bz2
+                npd_5k: data/sig_npd-5k.txt.bz2
             measures:
                 mean: [0.4122, 0.4084, 0.4637]
                 std: [0.1915, 0.1835, 0.1792]
