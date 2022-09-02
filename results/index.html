@@ -1,25 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang='en-US'>
     <head>
-<style>
-img {
-    display: block;
-    margin: 0 auto 10px auto;
-    width: 90%;
-    border: 2px solid black;
-    cursor: pointer;
-}
-</style>
-    <script>
-        function openImage(url) {
-            window.open(url);
+        <title>GOC9 - VGG16 Architecture</title>
+        <meta charset='UTF-8'>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script>
+        active = 0;
+        images = ['Performance_results.svg', 'boxplot-Oracle_perf.svg', 'boxplot-Copycat_perf.svg', 'boxplot-Finetune_perf.svg'];
+        function change_buttons(w) {
+            var prev_btn = $('.buttons #prev'),
+                next_btn = $('.buttons #next'),
+                next = (w)?active+1:active-1;
+            prev_btn.off("click");
+            next_btn.off("click");
+            active = next;
+            $('img.plot').attr('src', images[active]);
+            if (active == images.length-1) //last one
+                next_btn.removeClass('enabled');
+            else {
+                next_btn.click(function(){change_buttons(true);});
+                next_btn.addClass('enabled')
+            }
+            if (active == 0)
+                prev_btn.removeClass('enabled');
+            else {
+                prev_btn.click(function(){change_buttons(false);});
+                prev_btn.addClass('enabled');
+            }
         }
-    </script>
+        function change_scale() {
+            var scale = parseFloat($('input[type="number"]').val());
+            $("img.plot").css("height", "" + scale + "%");
+        }
+        $(document).ready(function(){
+            var next_btn = $('.buttons #next');
+            next_btn.addClass('enabled');
+            next_btn.click(function(){change_buttons(true);});
+            $("[type='number']").keypress(function (evt) {
+                evt.preventDefault();
+            });
+            $(":input").bind('keyup mouseup', function () {
+                change_scale();
+            });
+            $('img.plot').ready(function(){
+                $('img.plot').attr('src', images[active]);
+                $("img.plot").css("height", "95%");
+            });
+        });
+        </script>
     </head>
+    <style>
+    * {
+        box-sizing: border-box;
+    }
+    html,body {
+        height: 100%;
+    }
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    img {
+        display: block;
+        width: auto;
+        margin: 0 auto;
+        transform-origin: top;
+        margin-top: 10px;
+    }
+    .buttons {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        padding-top: 10px;
+        z-index: 10000;
+        padding: 0;
+    }
+    button {
+        background-color: #CCC;
+        border: none;
+        color: white;
+        padding: 5px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        margin: 4px 2px;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 5px;
+    }
+    button.enabled {
+        background-color: #337a36;
+        cursor: pointer;
+    }
+    button.enabled:hover {
+        background-color: #56a359;
+    }
+    button.enabled:active {
+        background-color: #439346;
+    }
+    input[type='number'] {
+        border: 1px solid #337a36;
+        border-radius: 6px;
+        margin: 0;
+        padding: 0 5px;
+        height: 21px;
+        font-size: 14px;
+    }
+    #plot {
+        display: flex;
+        height: 100%;
+    }
+    @media only screen and (min-width: 1210px) {
+        .buttons {
+            padding: 0 20px;
+        }
+    }
+    </style>
     <body>
-        <img src='Performance_results.png' onclick="openImage('./Performance_results.png')">
-        <img src='boxplot-Oracle_perf.png' onclick="openImage('./boxplot-Oracle_perf.png')">
-        <img src='boxplot-Copycat_perf.png' onclick="openImage('./boxplot-Copycat_perf.png')">
-        <img src='boxplot-Finetune_perf.png' onclick="openImage('./boxplot-Finetune_perf.png')">
+        <div class='buttons'><button id="prev">Previous</button><input type='number' value='95' step='1' min='20' max='95'><button id="next">Next</button></div>
+        <div id='plot'>
+             <img class='plot' src=''>
+        </div>
     </body>
 </html>
