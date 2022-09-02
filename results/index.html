@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+<style>
+img {
+    display: block;
+    margin: 0 auto 10px auto;
+    width: 90%;
+    border: 2px solid black;
+    cursor: pointer;
+}
+</style>
+    <script>
+        function openImage(url) {
+            window.open(url);
+        }
+    </script>
+    </head>
+    <body>
+        <img src='Performance_results.png' onclick="openImage('./Performance_results.png')">
+        <img src='boxplot-Oracle_perf.png' onclick="openImage('./boxplot-Oracle_perf.png')">
+        <img src='boxplot-Copycat_perf.png' onclick="openImage('./boxplot-Copycat_perf.png')">
+        <img src='boxplot-Finetune_perf.png' onclick="openImage('./boxplot-Finetune_perf.png')">
+    </body>
+</html>
