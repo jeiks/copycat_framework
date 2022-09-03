@@ -167,7 +167,9 @@ class Config:
             method to get all dataset filenames of the problem
         '''
         ret = self.get_data_options(problem)
-        if 'datasets' in ret:
+        if ret is None:
+            return []
+        elif 'datasets' in ret:
             return ret['datasets']
         else:
             print(f"The {problem} data's information was not found in the configuration file.")
@@ -216,11 +218,12 @@ class Config:
             method to get the data's mean and std of the problem
         '''
         ret = self.get_data_options(problem)
-        if 'measures' in ret:
-            ret = ret['measures']
-            if 'mean' in ret and 'std' in ret:
-                return tuple(ret['mean']), tuple(ret['std'])
-        return None, None
+        if ret is not None:
+            if 'measures' in ret:
+                ret = ret['measures']
+                if 'mean' in ret and 'std' in ret:
+                    return tuple(ret['mean']), tuple(ret['std'])
+        return 0, 0
 
     def get_outputs(self, problem):
         '''

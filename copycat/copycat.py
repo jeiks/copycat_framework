@@ -8,10 +8,11 @@ class Copycat(object):
     """
     This class is responsible to train a Copycat model.
     """
-    def __init__(self, problem, use_oracle_arch=True,
+    def __init__(self, problem, model_arch=None,
                  save_filename=None, resume_filename=None,
                  dataset_root='', db_name_train=None, db_name_test=None,
-                 dont_load_datasets=False, outputs=None, config_fn=None, finetune=False):
+                 new_dataset=None,
+                 dont_load_datasets=False, outputs=None, config_fn=None, finetune=False, data_filenames=None):
         if save_filename is None: print(f'"save_filename" is None. You need to set it before training the Copycat.')
         self.problem = problem
         self.save_filename = save_filename
@@ -30,12 +31,15 @@ class Copycat(object):
         else:
             self.db_name_train = self.__get_opt('db_train', db_name_train)
             self.db_name_test = self.__get_opt('db_test' , db_name_test)
-            self.dataset = Dataset(problem=self.problem, color=self.__get_opt('color', None), normalize=False, root=dataset_root, config_fn=self.config_fn)
+            if new_dataset is None:
+                self.dataset = Dataset(problem=self.problem, color=self.__get_opt('color', None), normalize=False, root=dataset_root, config_fn=self.config_fn, data_filenames=data_filenames)
+            else:
+                self.dataset = new_dataset
             #checking if dataset is using normalize:
             self.__check_dataset(self.dataset)
             self.outputs = len(self.dataset.classes)
         #loading the oracle model:
-        self.model = Model(self.outputs, name='Finetune' if finetune else 'Copycat', pretrained=True, oracle_arch=use_oracle_arch, state_dict=resume_filename, save_filename=save_filename)
+        self.model = Model(self.outputs, name='Finetune' if finetune else 'Copycat', pretrained=True, model_arch=model_arch, state_dict=resume_filename, save_filename=save_filename)
         self.save_filename = save_filename
     
     def __load_config(self):

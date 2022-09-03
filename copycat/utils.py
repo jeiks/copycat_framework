@@ -89,6 +89,8 @@ def get_copycat_model(model):
     #Checking if it is a Copycat's model or a Torch's model:
     if str(model).startswith('Copycat Model'):
         return model()
+    elif str(model).startswith('<copycat.oracle') or str(model).startswith('<copycat.copycat'):
+        return model.model()
     else:
         return model
 
@@ -175,7 +177,7 @@ def train(model, dataset, db_name='train',
 
         if weight_decay: scheduler.step()
         
-        if validation_step is not 0:
+        if validation_step != 0:
             if epoch % validation_step == 0:
                 micro, macro = test(model, dataset, db_name=db_name_validate, batch_size=batch_size, metric='f1_score')
                 print(f'~~ F1 Score on {db_name_validate} dataset:')
@@ -262,13 +264,13 @@ def compute_metrics(y_true, y_pred, metric='f1_score', digits=6):
         ret += f'Accuracy F1-Macro Average: {f1_macro_avg:.{digits}f}'
         return ret
 
-def label(model, dataset, db_name='npd', batch_size=32, hard_labels=True):
+def label(model, dataset, shuffle=False, db_name='npd', batch_size=32, hard_labels=True):
     device = torch.device('cuda' if torch.cuda.is_available else 'cpu')
     model = get_copycat_model(model)
     model  = model.to(device)
     db     = getattr(dataset, db_name)
     loader = getattr(dataset, f'{db_name}_loader')
-    loader = loader(batch_size=batch_size)
+    loader = loader(shuffle=shuffle, batch_size=batch_size)
     db.ret_fn()
 
     filenames   = np.empty((0), dtype=np.str)
@@ -284,7 +286,7 @@ def label(model, dataset, db_name='npd', batch_size=32, hard_labels=True):
                 if hard_labels:
                     outputs = outputs.argmax(axis=1)
                 else:
-                    outputs = outputs.view([('', outputs.dtype)]*len(dataset.classes)).reshape(outputs.shape[0])
+                    outputs = outputs.view([('', outputs.dtype)]*outputs.shape[1]).reshape(outputs.shape[0])
                 predictions = np.append(predictions, outputs, axis=0)
 
     return np.rec.fromarrays( [filenames, predictions], names=('filenames', 'predictions') )

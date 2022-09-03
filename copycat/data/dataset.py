@@ -104,7 +104,7 @@ class Dataset:
                   'npd'  : ''  #non-problem domain data
                   }
     classes = []
-    def __init__(self, root='', color=True, img_size=(128,128), normalize=None, mean=None, std=None, problem=None, classes=None, data_filenames=None, config_fn=None):
+    def __init__(self, root='', color=True, channels=3, img_size=(128,128), normalize=None, mean=None, std=None, problem=None, classes=None, data_filenames=None, config_fn=None):
         self.problem = problem
         self.config_fn = config_fn
         self.config = Config(self.config_fn)
@@ -114,6 +114,7 @@ class Dataset:
         self.mean = mean
         self.std = std
         self.root = root
+        self.channels = channels
         self.img_size = img_size
         self.color = True if color is None else color
         self.config_datasets()
@@ -141,13 +142,16 @@ class Dataset:
         db_fn   = self.__get_db_fn(db_name)
         db_root = self.__get_db_root(db_name)
         #print(f'Loading {db_name}({db_fn})...')
-        setattr(self, db_name, ImageList( filename=db_fn, root=db_root,
+        setattr(self, db_name, ImageList( filename=db_fn, root=db_root, channels=self.channels,
                                           color=self.color, transform=self.transform,
                                           return_filename=False ))
 
     def config_classes(self):
         if self.classes is None:
-            self.classes = self.config.get_classes(self.problem)
+            if self.problem is None:
+                self.classes = []
+            else:
+                self.classes = self.config.get_classes(self.problem)
             if len(self.classes) == 0:
                 try:
                     self.classes = list(getattr(self, list(self.filenames.items())[0][0]).categories)

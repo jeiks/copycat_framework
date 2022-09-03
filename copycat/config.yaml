@@ -37,8 +37,9 @@ problems:
             lr: 1e-3
             gamma: 0.3
             #db name to train the copycat:
-            db_train: npd_1k
+            #db_train: npd_1k
             #db_train: npd_5k
+            db_train: npd_1m
         finetune:
             max_epochs: 5
             batch_size: 32
@@ -58,6 +59,8 @@ problems:
                 npd_1k: data/act_npd-1k.txt.bz2
                 #Non Problem Domain (Copycat training - 5k images)
                 npd_5k: data/act_npd-5k.txt.bz2
+                #Non Problem Domain (Copycat training - 1M images)
+                npd_1m: data/act_npd-1m.txt.bz2
                 #Test dataset (to compare performance)
                 test: data/act_td.txt.bz2
             measures:
@@ -83,8 +86,8 @@ problems:
             lr: 1e-3
             gamma: 0.3
             #db name to train the copycat
-            db_train: npd_1k
-            #db_train: npd_5k
+            #db_train: npd_1k
+            db_train: npd_5k
         finetune:
             max_epochs: 5
             batch_size: 32
@@ -127,8 +130,8 @@ problems:
             batch_size: 32
             lr: 0.01
             gamma: 0.1
-            db_train: npd_1k
-            #db_train: npd_5k
+            #db_train: npd_1k
+            db_train: npd_5k
         finetune:
             max_epochs: 10
             batch_size: 32
@@ -163,8 +166,8 @@ problems:
             batch_size: 32
             lr: 1e-3
             gamma: 0.1
-            db_train: npd_1k
-            #db_train: npd_5k
+            #db_train: npd_1k
+            db_train: npd_5k
         finetune:
             max_epochs: 5
             batch_size: 32
@@ -198,8 +201,8 @@ problems:
             batch_size: 32
             lr: 1e-4
             gamma: 0.1
-            db_train: npd_1k
-            #db_train: npd_5k
+            #db_train: npd_1k
+            db_train: npd_5k
         finetune:
             max_epochs: 5
             batch_size: 32
@@ -232,8 +235,8 @@ problems:
             batch_size: 32
             lr: 1e-3
             gamma: 0.1
-            db_train: npd_1k
-            #db_train: npd_5k
+            #db_train: npd_1k
+            db_train: npd_5k
         finetune:
             max_epochs: 5
             batch_size: 32
@@ -262,12 +265,12 @@ problems:
             gamma: 0.3
             db_train: od
         copycat:
-            max_epochs: 10
+            max_epochs: 5
             batch_size: 32
             lr: 1e-3
-            gamma: 0.1
-            db_train: npd_1k
-            #db_train: npd_5k
+            gamma: 0.3
+            #db_train: npd_1k
+            db_train: npd_5k
         finetune:
             max_epochs: 5
             batch_size: 32
@@ -285,3 +288,38 @@ problems:
             measures:
                 mean: [0.4122, 0.4084, 0.4637]
                 std: [0.1915, 0.1835, 0.1792]
+
+    GTSRB:
+        classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42]
+        outputs: 43
+        db_test: test
+        oracle:
+            max_epochs: 5
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.1
+            db_train: od
+        copycat:
+            max_epochs: 10
+            batch_size: 32
+            lr: 1e-3
+            gamma: 0.3
+            db_train: npd_1k
+            #db_train: npd_5k
+        finetune:
+            max_epochs: 10
+            batch_size: 32
+            lr: 1e-5
+            gamma: 0.3
+            db_train: pd_sl
+        data:
+            datasets:
+                od: data/gtsrb_od.txt.bz2
+                test: data/gtsrb_td.txt.bz2
+                pd: data/gtsrb_pd.txt.bz2
+                pd_sl: data/gtsrb_pd_sl.txt.bz2
+                npd_1k: data/gtsrb_npd-1k.txt.bz2
+                npd_5k: data/gtsrb_npd-5k.txt.bz2
+            measures:
+                mean: [0.3429, 0.3180, 0.3281]
+                std: [0.1672, 0.1669, 0.1760]

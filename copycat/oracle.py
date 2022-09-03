@@ -1,14 +1,15 @@
 from .model import Model
-from .utils import train, test, label, save_model, label_image
+from .utils import train, test, label, save_model, label_image, calculate_mean_std
 import torchvision.transforms as transforms
-from .data import Dataset, Transform
+from .data import Dataset, Transform, OpenImage
 from .config import Config
 
 class Oracle(object):
-    def __init__(self, problem, save_filename=None, resume_filename=None,
+    def __init__(self, problem, model_arch=None, save_filename=None, resume_filename=None,
                  dataset_root='', db_name_train=None, db_name_test=None,
+                 new_dataset=None,
                  dont_load_datasets=False, outputs=None,
-                 config_fn=None, baseline=False): #'baseline' is the second baseline besides 'Oracle'
+                 config_fn=None, baseline=False, data_filenames=None): #'baseline' is the second baseline besides 'Oracle'
         if save_filename is None: print(f'"save_filename" is None. You need to set it before training the Oracle.')
         self.problem = problem
         self.save_filename = save_filename
@@ -21,18 +22,22 @@ class Oracle(object):
             if outputs is None:
                 aux = self.__get_opt('classes')
                 outputs = len(aux) if aux is not None else None
-            assert outputs is not None and outputs != 0, "Please specify (as parameter or in configutation file) the Oracle number of outputs."
+            if type(model_arch) == str:
+                assert outputs is not None and outputs != 0, "Please specify (as parameter or in configutation file) the Oracle number of outputs."
             self.outputs = outputs
             self.dataset = None
         else:
             self.db_name_train = self.__get_opt('db_train', db_name_train)
             self.db_name_test  = self.__get_opt('db_test', db_name_test)
-            self.dataset = Dataset(problem=self.problem, color=self.__get_opt('color', None), normalize=True, root=dataset_root, config_fn=self.config_fn)
+            if new_dataset is None:
+                self.dataset = Dataset(problem=self.problem, color=self.__get_opt('color', None), normalize=True, root=dataset_root, config_fn=self.config_fn, data_filenames=data_filenames)
+            else:
+                self.dataset = new_dataset
             #checking if dataset is using normalize:
             self.__check_dataset(self.dataset)
             self.outputs = len(self.dataset.classes)
         #loading the oracle model:
-        self.model = Model(self.outputs, name='Baseline' if self.baseline else 'Oracle', pretrained=True, oracle_arch=True, state_dict=resume_filename, save_filename=save_filename)
+        self.model = Model(self.outputs, name='Baseline' if self.baseline else 'Oracle', pretrained=True, model_arch=model_arch, state_dict=resume_filename, save_filename=save_filename)
     
     def __load_config(self):
         default = {'max_epochs':10, 'batch_size':16, 'lr':1e-4, 'gamma':0.1, 'criterion':'CrossEntropyLoss',
@@ -41,6 +46,7 @@ class Oracle(object):
         for k, v in default.items():
             if k not in self.config:
                 self.config[k] = v
+        #print(self.config)
 
     def __get_opt(self, name, value=None):
         return self.config[name] if value is None and name in self.config else value
@@ -88,9 +94,9 @@ class Oracle(object):
     def query_soft_label(self, db_name='npd'):
         return self.label(db_name=db_name, hard_labels=False)
     
-    def query_single_image(self, img, color=True, hard_labels=True):
+    def query_single_image(self, img, hard_labels=True):
         trans = Transform(problem=self.problem, include_normalize=True)
-        img = trans.process_image(img=img, color=color)
+        img = trans(img)
         return label_image(model=self.model, image=img, hard_labels=hard_labels)
     
     def cpu(self):

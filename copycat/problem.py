@@ -49,7 +49,7 @@ class Problem(object):
         '''
         if self.copycat is None:
             self.copycat = Copycat(problem=self.problem, save_filename=self.copycat_filename, resume_filename=self.copycat_resume_fn,
-                                   dataset_root=self.copycat_dataset_root, use_oracle_arch=self.use_same_arch, config_fn=self.config_fn)
+                                   dataset_root=self.copycat_dataset_root, model_arch='vgg16' if self.use_same_arch else 'alexnet', config_fn=self.config_fn)
         else:
             self.copycat.cuda()
 
@@ -76,7 +76,7 @@ class Problem(object):
             
             self.finetune = Finetune(problem=self.problem, save_filename=self.finetune_filename,
                                      resume_filename=resume_filename, dataset_root=self.finetune_dataset_root,
-                                     use_oracle_arch=self.use_same_arch, config_fn=self.config_fn)
+                                     model_arch='vgg16' if self.use_same_arch else 'alexnet', config_fn=self.config_fn)
         else:
             self.finetune.cuda()
 

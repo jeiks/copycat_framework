@@ -93,21 +93,21 @@ class ImageList(data.Dataset):
     def __init__(self, filename,
                  root=None,
                  color=True,
-                 num_output_channels=3,
+                 channels=3,
                  transform=None, target_transform=None,
                  return_filename=False,
                  balance_dataset=False):
         self.filename = filename
         self.color = color
-        self.num_output_channels = num_output_channels
+        self.channels = channels
         self.set_root(root)
         self.transform = transform
         self.target_transform = target_transform
         self.ret_fn(return_filename)
         self.data, self.targets, self.logits, self.void_labels = self.__process_data()
         self.categories = np.unique(self.targets).astype(np.uint8)
-        self.balance_dataset(balance_dataset)
         self.balanced_indexes = None
+        self.balance_dataset(balance_dataset)
         self.__select_open_image()
 
     def __select_open_image(self):
@@ -118,9 +118,9 @@ class ImageList(data.Dataset):
                 self.open_image = lambda x: self.transform(OpenImage.color_rgb_pil(x))
         else:
             if self.transform is None:
-                self.open_image = lambda x: torch.tensor(OpenImage.grayscale(x))
+                self.open_image = lambda x: Grayscale(num_output_channels=self.channels)(torch.tensor(OpenImage.grayscale(x)))
             else:
-                self.open_image = lambda x: self.transform(OpenImage.grayscale_pil(x, num_output_channels=self.num_output_channels))
+                self.open_image = lambda x: self.transform(OpenImage.grayscale_pil(x, num_output_channels=self.channels))
 
     def __open(self):
         assert type(self.filename) is str, f'@param filename "{self.filename}" must be a string (.txt or .bz2).'
@@ -252,7 +252,10 @@ class ImageList(data.Dataset):
         self.getitem = self.__getitem__with_filename__ if return_fn else self.__getitem_simple__
     
     def set_root(self, root=None):
-        self.root = os.path.expanduser(root)
+        if root is None:
+            self.root = ''
+        else:
+            self.root = os.path.expanduser(root)
     
     def update_labels(self, labels, force_logits=False, force_labels=False):
         assert type(labels) == dict, '@param "labels" must be a dict of "filename": int(new_label) or "filename": [predictions,...]'
