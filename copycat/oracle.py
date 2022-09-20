@@ -1,3 +1,4 @@
+from sys import stderr
 from .model import Model
 from .utils import train, test, label, save_model, label_image, calculate_mean_std
 import torchvision.transforms as transforms
@@ -54,13 +55,19 @@ class Oracle(object):
     def __check_dataset(self, dataset):
         assert dataset.has_transformer(transforms.Normalize) or self.baseline, \
             "You must include transforms.Normalize in oracle's datasets"
-        for db in self.db_name_train, self.db_name_test:
-            assert getattr(self.dataset, db) is not None, f'"{db}" does not exists in dataset'
+        if self.db_name_train is None:
+            print('WARNING: train dataset is None', file=stderr)
+        else:
+            assert getattr(self.dataset, self.db_name_train) is not None, f'Train dataset"{self.db_name_train}" does not exists in configuration file'
+        if self.db_name_test is None:
+            print('WARNING: test dataset is None', file=stderr)
+        else:
+            assert getattr(self.dataset, self.db_name_test) is not None, f'Test dataset "{self.db_name_test}" does not exists in configuration file'
 
     def train(self, max_epochs=None, batch_size=None, lr=None, gamma=None, criterion=None,
               optimizer=None, weight_decay=None, validation_step=None, save_snapshot=None):
         assert self.save_filename is not None, 'The param "save_filename" must be set before training.'
-        assert self.dataset is not None, 'datasets not provided'
+        assert self.dataset is not None and self.db_name_train is not None and self.db_name_test is not None, 'No datasets provided to train the model'
         #ps: the validation here is not used in training process. It is only used to the user see the model efficiency during training
         self.model = train(self.model, self.dataset,
                            db_name          = self.db_name_train,
@@ -78,7 +85,7 @@ class Oracle(object):
         save_model(self.model, self.save_filename)
 
     def test(self, metric='report'):
-        assert self.dataset is not None, 'datasets not provided'
+        assert self.dataset is not None and self.db_name_test is not None, 'No datasets provided to test the model'
         return test(self.model, self.dataset, db_name=self.db_name_test, metric=metric)
     
     def label(self, db_name='npd', hard_labels=True):

@@ -1,3 +1,4 @@
+from sys import stderr
 from .model import Model
 from .utils import train, test, save_model
 import torchvision.transforms as transforms
@@ -56,8 +57,14 @@ class Copycat(object):
     def __check_dataset(self, dataset):
         assert not dataset.has_transformer(transforms.Normalize), \
             "You cannot include transforms.Normalize in copycat's datasets. It is used only in Oracle."
-        for db in self.db_name_train, self.db_name_test:
-            assert getattr(self.dataset, db) is not None, f'"{db}" does not exists in dataset'
+        if self.db_name_train is None:
+            print('WARNING: train dataset is None', file=stderr)
+        else:
+            assert getattr(self.dataset, self.db_name_train) is not None, f'Train dataset"{self.db_name_train}" does not exists in configuration file'
+        if self.db_name_test is None:
+            print('WARNING: test dataset is None', file=stderr)
+        else:
+            assert getattr(self.dataset, self.db_name_test) is not None, f'Test dataset "{self.db_name_test}" does not exists in configuration file'
 
     def train(self, max_epochs=None, batch_size=None, criterion=None, optimizer=None, weight_decay=None,
               lr=None, gamma=None, validation_step=None, save_snapshot=None, balance_dataset=None):

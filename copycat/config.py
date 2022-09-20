@@ -223,7 +223,7 @@ class Config:
                 ret = ret['measures']
                 if 'mean' in ret and 'std' in ret:
                     return tuple(ret['mean']), tuple(ret['std'])
-        return 0, 0
+        return None, None
 
     def get_outputs(self, problem):
         '''

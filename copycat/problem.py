@@ -9,7 +9,7 @@ class Problem(object):
     def __init__(self, problem, oracle_filename, copycat_filename, finetune_filename,
                  oracle_dataset_root='', copycat_dataset_root='', finetune_dataset_root='',
                  oracle_resume_filename=None, copycat_resume_filename=None, finetune_resume_filename=None,
-                 use_same_arch=True, config_fn=None, seed=None):
+                 config_fn=None, seed=None, oracle_arch=None, copycat_arch=None):
         # Oracle:
         self.oracle = None
         self.oracle_filename = oracle_filename
@@ -27,18 +27,20 @@ class Problem(object):
         self.finetune_dataset_root = finetune_dataset_root
         # Common
         self.problem = problem
-        self.use_same_arch = use_same_arch
         self.config_fn = config_fn
         self.results = {'copycat': None, 'oracle': None, 'finetune': None}
-        #Seed:
+        # Seed:
         if seed is not None: set_seeds(seed)
+        # Arch:
+        self.oracle_arch = 'vgg16' if oracle_arch is None else oracle_arch
+        self.copycat_arch = 'vgg16' if copycat_arch is None else copycat_arch
 
     def load_oracle(self):
         '''
             Load model from disk or move it from CPU to CUDA
         '''
         if self.oracle is None:
-            self.oracle = Oracle(problem=self.problem, save_filename=self.oracle_filename, resume_filename=self.oracle_resume_fn,
+            self.oracle = Oracle(problem=self.problem, model_arch=self.oracle_arch, save_filename=self.oracle_filename, resume_filename=self.oracle_resume_fn,
                                  dataset_root=self.oracle_dataset_root, config_fn=self.config_fn)
         else:
             self.oracle.cuda()
@@ -48,8 +50,8 @@ class Problem(object):
             Load model from disk or move it from CPU to CUDA
         '''
         if self.copycat is None:
-            self.copycat = Copycat(problem=self.problem, save_filename=self.copycat_filename, resume_filename=self.copycat_resume_fn,
-                                   dataset_root=self.copycat_dataset_root, model_arch='vgg16' if self.use_same_arch else 'alexnet', config_fn=self.config_fn)
+            self.copycat = Copycat(problem=self.problem, model_arch=self.copycat_arch, save_filename=self.copycat_filename, resume_filename=self.copycat_resume_fn,
+                                   dataset_root=self.copycat_dataset_root, config_fn=self.config_fn)
         else:
             self.copycat.cuda()
 
@@ -74,9 +76,9 @@ class Problem(object):
                 print('--------------->  GENERATING A MODEL FOR FINETUNE WITH RANDOM PARAMETERS...')
                 resume_filename=None
             
-            self.finetune = Finetune(problem=self.problem, save_filename=self.finetune_filename,
+            self.finetune = Finetune(problem=self.problem, model_arch=self.copycat_arch,save_filename=self.finetune_filename,
                                      resume_filename=resume_filename, dataset_root=self.finetune_dataset_root,
-                                     model_arch='vgg16' if self.use_same_arch else 'alexnet', config_fn=self.config_fn)
+                                     config_fn=self.config_fn)
         else:
             self.finetune.cuda()
 
@@ -146,12 +148,14 @@ class Problem(object):
         test_results = obj.test(metric=[metric, 'f1_score'])
         msg = f'{name} reports:\n'
         if show_datasets:
-            db_train = getattr(obj.dataset, obj.db_name_train)
-            db_test = getattr(obj.dataset, obj.db_name_test)
-            msg += 'Training - '
-            msg += str(db_train)+'\n'
-            msg += 'Testing - '
-            msg += str(db_test)+'\n'
+            if obj.db_name_train is not None:
+                db_train = getattr(obj.dataset, obj.db_name_train)
+                msg += 'Training - '
+                msg += str(db_train)+'\n'
+            if obj.db_name_test is not None:
+                db_test = getattr(obj.dataset, obj.db_name_test)
+                msg += 'Testing - '
+                msg += str(db_test)+'\n'
         msg += '\nMetrics:\n'
         msg += test_results[0]
         print(msg)
@@ -238,16 +242,20 @@ class Problem(object):
 
     def print_performance(self):
         self.__save_results()
-        oracle_f1_macro = self.results['oracle'][1]
-        copycat_f1_macro = self.results['copycat'][1]
-        finetune_f1_macro = self.results['finetune'][1]
+        oracle_f1_macro = None if self.results['oracle'] is None else self.results['oracle'][1]
+        copycat_f1_macro = None if self.results['copycat'] is None else self.results['copycat'][1]
+        finetune_f1_macro = None if self.results['finetune'] is None else self.results['finetune'][1]
         msg =   'Accuracy (Macro F1-Score):\n'
-        msg += f'  Oracle...: {oracle_f1_macro:.6f}\n'
-        msg += f'  Copycat..: {copycat_f1_macro:.6f}\n'
-        msg += f'  Finetune.: {finetune_f1_macro:.6f}\n'
+        if oracle_f1_macro is not None:
+            msg += f'  Oracle...: {oracle_f1_macro:.6f}\n'
+        if copycat_f1_macro is not None:
+            msg += f'  Copycat..: {copycat_f1_macro:.6f}\n'
+        if finetune_f1_macro is not None:
+            msg += f'  Finetune.: {finetune_f1_macro:.6f}\n'
         msg += f'Attack Performance\n'
-        msg += f'  Copycat on Oracle...........: {copycat_f1_macro/oracle_f1_macro*100:.2f}%\n'
-        msg += f'  Finetuned Copycat on Oracle.: {finetune_f1_macro/oracle_f1_macro*100:.2f}%'
+        if oracle_f1_macro is not None:
+            msg += f'  Copycat on Oracle...........: {copycat_f1_macro/oracle_f1_macro*100:.2f}%\n'
+            msg += f'  Finetuned Copycat on Oracle.: {finetune_f1_macro/oracle_f1_macro*100:.2f}%'
         print(msg)
     
     def print_reports(self):

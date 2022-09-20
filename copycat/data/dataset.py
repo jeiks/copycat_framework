@@ -51,10 +51,17 @@ class Transform:
             Method to return the mean and std, checking the arguments and also the config file.
             Note: The arguments has higher priority.
         '''
-        if self.mean is None or self.std is None:
-            mean, std = self.config.get_mean_std(self.problem)
-            self.mean = mean if self.mean is None else self.mean
-            self.std  = std  if self.std  is None else self.std
+        mean, std = self.config.get_mean_std(self.problem)
+        if self.mean is None: #it was not passed a new mean value
+            if mean is None: #config file also has no mean value
+                self.mean = [0,0,0]
+            else: #config file has the mean value
+                self.mean = mean
+        if self.std is None:  #it was not passed a new std value
+            if std is None: #config file also has no std value
+                self.std = [1,1,1]
+            else:
+                self.std = std #config file has mean value
         return self.mean, self.std
 
     def has_transformer(self, trans):
@@ -81,7 +88,7 @@ class Dataset:
     @param img_size: tuple, size to return the images. Ex.: img_size=(224,224)
     @param normalize: boolean, return the images normalized.
      -> when @param mean and @param std are not provided as parameters, their values are loaded from the configuration file
-     -> when only @param mean or @param std is provided, the other value is loaded from the configuration file
+     -> when only @param mean or @param std is provided, the another value is loaded from the configuration file
     @param problem: string, name of the problem to load its configurations 
     @param classes: list, name of problem classes
      -> them @param classes is not provided, the values can be loaded from the configuration file

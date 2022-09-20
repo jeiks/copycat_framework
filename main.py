@@ -4,7 +4,7 @@ import signal
 from sys import exit
 import argparse
 
-from copycat import Problem, Config
+from copycat import Copycat, Problem, Config
 from torch import cuda
 
 from copycat.utils import set_seeds
@@ -23,10 +23,10 @@ class Options:
                  validation_step=None,
                  save_snapshot=None,
                  #oracle:
-                 oracle_max_epochs=None, oracle_batch_size=None, oracle_lr=None,
+                 oracle_arch=None, oracle_max_epochs=None, oracle_batch_size=None, oracle_lr=None,
                  oracle_gamma=None, oracle_dataset_root=None, oracle_resume_filename=None,
                  #copycat:
-                 copycat_max_epochs=None, copycat_batch_size=None, copycat_lr=None,
+                 copycat_arch=None, copycat_max_epochs=None, copycat_batch_size=None, copycat_lr=None,
                  copycat_gamma=None, copycat_dataset_root=None, copycat_balance_dataset=None, copycat_resume_filename=None,
                  #finetune:
                  finetune_max_epochs=None, finetune_batch_size=None, finetune_lr=None,
@@ -51,6 +51,7 @@ class Options:
         self.save_snapshot = save_snapshot
         self.problems = self.get_problem_names()
         #oracle:
+        self.oracle_arch=oracle_arch
         self.oracle_resume_filename = oracle_resume_filename
         self.oracle_max_epochs = oracle_max_epochs
         self.oracle_batch_size = oracle_batch_size
@@ -58,6 +59,7 @@ class Options:
         self.oracle_gamma = oracle_gamma
         self.oracle_dataset_root = oracle_dataset_root
         #copycat:
+        self.copycat_arch = copycat_arch
         self.copycat_resume_filename = copycat_resume_filename
         self.copycat_max_epochs = copycat_max_epochs
         self.copycat_batch_size = copycat_batch_size
@@ -120,6 +122,7 @@ class Options:
         fmt = f"  Oracle:\n"
         if self.train_oracle:
             fmt+= f"     Model filename: '{self.oracle_filename}'\n"
+            fmt+= f"     Model arch: {self.oracle_arch}\n"
         if self.oracle_resume_filename is not None:
             fmt+= f"     Resume filename: '{self.oracle_resume_filename}'\n"
         # max epochs
@@ -137,6 +140,12 @@ class Options:
                 if db[1] is not None:
                     fmt+= f" ('{db[1]}')"
                 fmt+= '\n'
+            db_test = self.get_db_name(model='oracle', db_name='db_test')
+            if db_test[0] is not None:
+                fmt+= f"     Test dataset: {db_test[0]}"
+                if db_test[1] is not None:
+                    fmt+= f" ('{db_test[1]}')"
+                fmt+= '\n'
         else:
             fmt+= f"     It will NOT be trained.\n"
         db_root = self.parse_value('oracle_dataset_root')
@@ -147,6 +156,7 @@ class Options:
         fmt = f"  Copycat:\n"
         if self.train_copycat:
             fmt+= f"     Model filename: '{self.copycat_filename}'\n"
+            fmt+= f"     Model arch: {self.copycat_arch}\n"
         if self.copycat_resume_filename is not None:
             fmt+= f"     Resume filename: '{self.copycat_resume_filename}'\n"
         if self.train_copycat and not self.only_print_reports:
@@ -163,7 +173,13 @@ class Options:
                 if db[1] is not None:
                     fmt+= f" ('{db[1]}')"
                 fmt+= '\n'
-            fmt+= f"     The dataset will {'' if self.parse_value('copycat_balance_dataset') else 'NOT '}be balanced.\n"
+            db_test = self.get_db_name(model='copycat', db_name='db_test')
+            if db_test[0] is not None:
+                fmt+= f"     Test dataset: {db_test[0]}"
+                if db_test[1] is not None:
+                    fmt+= f" ('{db_test[1]}')"
+                fmt+= '\n'
+            fmt+= f"     The training dataset will {'' if self.parse_value('copycat_balance_dataset') else 'NOT '}be balanced.\n"
             fmt+= f"     The training dataset will {'' if self.label_copycat_dataset else 'NOT '}be labeled by the Oracle Model.\n"
         else:
             fmt+= f"     It will NOT be trained.\n"
@@ -253,6 +269,7 @@ def parse_params():
     #Oracle
     parser.add_argument('--oracle', type=str, default='Oracle.pth', help="Filename to save the Oracle Model")
     parser.add_argument('--oracle-resume', type=str, help="Filename to resume the Oracle Model")
+    parser.add_argument('--oracle-arch', type=str, default='vgg16', help="Oracle architecture (default: vgg16)")
     parser.add_argument('--dont-train-oracle', action='store_true', help="You can use this option to: Resume the Oracle's Model, or test the problem on an Oracle's Model with random weights")
     parser.add_argument('--oracle-max-epochs', type=int, help="Change maximum epochs to train Oracle's Model")
     parser.add_argument('--oracle-batch-size', type=int, help="Batch size to train Oracle's Model")
@@ -262,6 +279,7 @@ def parse_params():
     #Copycat:
     parser.add_argument('--copycat', type=str, default='Copycat.pth', help="Filename to save the Copycat Model")
     parser.add_argument('--copycat-resume', type=str, help="Filename to resume the Copycat Model")
+    parser.add_argument('--copycat-arch', type=str, default='vgg16', help="Copycat (and Finetune) architecture (default: vgg16)")
     parser.add_argument('--dont-train-copycat', action='store_true', help="You can use this option to test a Copycat's Model with random weights")
     parser.add_argument('--copycat-max-epochs', type=int, help="Change maximum epochs to train Copycat's Model")
     parser.add_argument('--copycat-batch-size', type=int, help="Batch size to train Copycat's Model")
@@ -290,6 +308,7 @@ def parse_params():
                    #oracle
                    oracle_filename=args.oracle,
                    oracle_resume_filename=args.oracle_resume,
+                   oracle_arch=args.oracle_arch,
                    train_oracle=not args.dont_train_oracle,
                    oracle_max_epochs=args.oracle_max_epochs,
                    oracle_batch_size=args.oracle_batch_size,
@@ -299,6 +318,7 @@ def parse_params():
                    #copycat
                    copycat_filename=args.copycat,
                    copycat_resume_filename=args.copycat_resume,
+                   copycat_arch=args.copycat_arch,
                    train_copycat=not args.dont_train_copycat,
                    copycat_max_epochs=args.copycat_max_epochs,
                    copycat_batch_size=args.copycat_batch_size,
@@ -332,10 +352,12 @@ if __name__ == '__main__':
     input('\nCheck the parameters and press ENTER to continue...\n')
     problem = Problem(problem=options.problem_name,
                       #oracle
+                      oracle_arch=options.oracle_arch,
                       oracle_filename=options.oracle_filename,
                       oracle_resume_filename=options.oracle_resume_filename,
                       oracle_dataset_root=options.oracle_dataset_root,
                       #copycat
+                      copycat_arch=options.copycat_arch,
                       copycat_filename=options.copycat_filename,
                       copycat_resume_filename=options.copycat_resume_filename,
                       copycat_dataset_root=options.copycat_dataset_root,

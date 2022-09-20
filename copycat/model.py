@@ -38,11 +38,21 @@ class Model():
         raise Exception(f'"{model_arch}" is invalid for model_arch. You must use a string related to a torchvision model or a dict with your own model')
 
     def __load_torchvision_model(self, model_arch):
-        model_list = [x for x in dir(models) if x == x.lower() and x[0] != '_']
-        assert model_arch in model_list, f"{model_arch} if not a valid torchvision's model. You must select one of {model_list}"
+        model_list = [x for x in dir(models) if callable(getattr(models, x)) and x[0].islower()]
+        assert model_arch in model_list, f"{model_arch} if not a valid torchvision's model. Options: {', '.join(model_list)}"
         model = getattr(models,model_arch)(pretrained=self.pretrained)
-        in_features  = model.classifier[-1].in_features
-        model.classifier[-1] = torch.nn.Linear(in_features=in_features, out_features=self.n_outputs, bias=True)
+        last_layer = next(reversed(model._modules))
+        if type(getattr(model, last_layer)) == torch.nn.modules.linear.Linear:
+            #model.__dict__['_modules'][last_layer]
+            in_features = model.fc.in_features
+            model.fc = torch.nn.Linear(in_features=in_features, out_features=self.n_outputs, bias=True)
+        elif type(getattr(model, last_layer)) == torch.nn.modules.container.Sequential:      
+            #model.__dict__['_modules'][last_layer]
+            in_features  = model.classifier[-1].in_features
+            model.classifier[-1] = torch.nn.Linear(in_features=in_features, out_features=self.n_outputs, bias=True)
+        else:
+            raise ValueError(f'The last layer of the architecture "{model_arch}" is not Linear or Sequential.. I do not know how to proceed.')
+
         return model
     
     def load_state_dict(self, state_dict):
