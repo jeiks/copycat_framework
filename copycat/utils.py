@@ -248,7 +248,7 @@ def compute_metrics(y_true, y_pred, metric='f1_score', digits=6):
         cr = classification_report(y_true, y_pred, digits=digits)
         bac = balanced_accuracy_score(y_true, y_pred)
         f1_macro_avg = f1_score(y_true, y_pred, average='macro')
-        max_cat  = y_true.max()+1
+        max_cat  = int(y_true.max())+1
         col_size = len(str(cm.max()))+1
         cat_size = len(str(max_cat))+2
         ret  = 'Confusion Matrix:\n'
