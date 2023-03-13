@@ -147,6 +147,12 @@ class Options:
                     fmt+= f" ('{db_test[1]}')"
                 fmt+= '\n'
         else:
+            db_test = self.get_db_name(model='oracle', db_name='db_test')
+            if db_test[0] is not None:
+                fmt+= f"     Test dataset: {db_test[0]}"
+                if db_test[1] is not None:
+                    fmt+= f" ('{db_test[1]}')"
+                fmt+= '\n'
             fmt+= f"     It will NOT be trained.\n"
         db_root = self.parse_value('oracle_dataset_root')
         if db_root != '': fmt+= f"     Dataset root: '{db_root}'\n"
@@ -182,6 +188,12 @@ class Options:
             fmt+= f"     The training dataset will {'' if self.parse_value('copycat_balance_dataset') else 'NOT '}be balanced.\n"
             fmt+= f"     The training dataset will {'' if self.label_copycat_dataset else 'NOT '}be labeled by the Oracle Model.\n"
         else:
+            db_test = self.get_db_name(model='copycat', db_name='db_test')
+            if db_test[0] is not None:
+                fmt+= f"     Test dataset: {db_test[0]}"
+                if db_test[1] is not None:
+                    fmt+= f" ('{db_test[1]}')"
+                fmt+= '\n'
             fmt+= f"     It will NOT be trained.\n"
         db_root = self.parse_value('copycat_dataset_root')
         if db_root != '': fmt+= f"     Dataset root: '{db_root}'\n"
