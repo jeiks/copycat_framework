@@ -22,8 +22,6 @@ Our experiments were initially developed using [Caffe Framework](https://caffe.b
 
 We are currently continuing our research using [PyTorch](https://pytorch.org/). Our own Framework is constantly under development (and lacks documentation), but we are publishing it to provide a simple way to test the Copycat method on your data.
 
-If you use our code, please cite our works:
-
     @inproceedings{Correia-Silva-IJCNN2018,
       author={Jacson Rodrigues {Correia-Silva} and Rodrigo F. {Berriel} and Claudine {Badue} and Alberto F. {de Souza} and Thiago {Oliveira-Santos}},
       booktitle={2018 International Joint Conference on Neural Networks (IJCNN)},
@@ -46,6 +44,25 @@ If you use our code, please cite our works:
     }
 
 Feel free to contact me (jacson.silva at ufes dot br) and also to contribute with us.
+
+### My Thesis
+
+My last work was my Doctoral Thesis, which can be found at:<br>
+[Copycat CNN: Convolutional Neural Network Extraction Attack with Unlabeled Natural Images](https://sappg.ufes.br/tese_drupal//tese_17166_Tese-Jacson-2018142921.pdf)
+([2nd download option](https://drive.google.com/file/d/1ceLIJOvPMyRc2IN5hkE3-Ncgp4PxM6wQ/view?usp=sharing))
+
+The code provided here was used in a part of the experiments of my thesis, and
+[the PyTorch Weights for Oracle and Copycat models can be downloaded here](https://drive.google.com/drive/folders/1t1yANSFisafcLRtt3ibTUp81RF1I2NzP?usp=drive_link).
+
+Due to the copyrights restrictions, I cannot provide the datasets, but feel free to contact me for support in generating them.
+
+    @phdthesis{correia-silva-phd-2023,
+        author = {Correia-Silva, Jacson Rodrigues},
+        title = {Copycat CNN: Convolutional Neural Network Extraction Attack with Unlabeled Natural Images},
+        year = {2023},
+        school = {Universidade Federal do Esp\'{i}rito Santo},
+        address = {Esp\'{i}rito Santo, Brazil},
+    }
 
 ### How to use your own data to train a Oracle and to attack it using Copycat method
 
